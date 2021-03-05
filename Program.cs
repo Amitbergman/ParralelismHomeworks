@@ -3,14 +3,17 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 public class Example
 {
     public static void Main()
     {
 
-        //String[] args = Environment.GetCommandLineArgs();
-
+        String[] args = Environment.GetCommandLineArgs();
+        string fileName = args[2];
+        int numberOfCores = int.Parse(args[1]);
         //String[] files = Directory.GetFiles(args[1]);
         // Parallel.For(0, files.Length,
         //            index => {
@@ -18,21 +21,36 @@ public class Example
         //          long size = fi.Length;
         //            Interlocked.Add(ref totalSize, size);
         //    });
-        int[] arr = { 1, 9, 4, 6 , 2};
+        // Read the file and display it line by line.  
+        string line;
+        List<long> listOfNumbersToSort = new List<long>();
 
-        int[] sorted =  calc(arr, 0, arr.Length - 1);
+        StreamReader file =
+            new StreamReader(fileName);
+        while ((line = file.ReadLine()) != null)
+        {
+            long toAdd = long.Parse(line);
+            listOfNumbersToSort.Add(toAdd);
+        }
 
-        printarray(sorted);
+        file.Close();
 
+        long[] array = listOfNumbersToSort.ToArray();
+        Stopwatch sw = new Stopwatch();
+        sw.Start();
+
+
+        long[] sorted =  mergeSort(array, 0, array.Length - 1);
+        sw.Stop();
+
+        long microseconds = sw.ElapsedTicks / (Stopwatch.Frequency / (1000L * 1000L));
+        Console.WriteLine("Merge sort: {0}", microseconds);
+        //printarray(sorted);
     }
-
-
-    private static int[] calc(int[] arr, int start, int end)
+    private static long[] mergeSort(long[] arr, int start, int end)
     {
-        Console.WriteLine("Directory '{0}': {1}", start, end);
-
-
-        int[] a = { };
+        
+        long[] a = { };
         if (start + 3 >= end)
         { //we have only 4 items to sort
 
@@ -45,15 +63,15 @@ public class Example
 
         int middle = start + (end - start) / 2;
 
-        int[] left = calc(arr, start, middle - 1);
-        int[] right = calc(arr, middle, end);
+        long[] left = mergeSort(arr, start, middle - 1);
+        long[] right = mergeSort(arr, middle, end);
 
 
-        return merge(left, right);
+        return mergeSortedLists(left, right);
 
     }
 
-    private static void printarray(int[] a)
+    private static void printarray(long[] a)
     {
         for (int i = 0; i < a.Length; i++)
         {
@@ -61,11 +79,11 @@ public class Example
         }
     }
 
-    private static int[] merge(int[] left, int[] right)
+    private static long[] mergeSortedLists(long[] left, long[] right)
     {
         int lengthOfNewArray = left.Length + right.Length;
 
-        int[] mergedArray = new int[lengthOfNewArray];
+        long[] mergedArray = new long[lengthOfNewArray];
 
         int indexNew = 0;
         int indexLeft = 0;
@@ -87,7 +105,7 @@ public class Example
                 continue;
             }
 
-            if ( left[indexLeft] <= right[indexRight])
+            if (left[indexLeft] <= right[indexRight])
             {
                 //Left is smaller
                 mergedArray[indexNew] = left[indexLeft];
