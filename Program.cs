@@ -14,14 +14,7 @@ public class Example
         String[] args = Environment.GetCommandLineArgs();
         string fileName = args[2];
         int numberOfCores = int.Parse(args[1]);
-        //String[] files = Directory.GetFiles(args[1]);
-        // Parallel.For(0, files.Length,
-        //            index => {
-        //              FileInfo fi = new FileInfo(files[index]);
-        //          long size = fi.Length;
-        //            Interlocked.Add(ref totalSize, size);
-        //    });
-        // Read the file and display it line by line.  
+
         string line;
         List<long> listOfNumbersToSort = new List<long>();
 
@@ -40,34 +33,50 @@ public class Example
         sw.Start();
 
 
-        long[] sorted =  mergeSort(array, 0, array.Length - 1);
+        long[] sorted =  mergeSort(array, 0, array.Length - 1).GetAwaiter().GetResult();
         sw.Stop();
 
         long microseconds = sw.ElapsedTicks / (Stopwatch.Frequency / (1000L * 1000L));
         Console.WriteLine("Merge sort: {0}", microseconds);
+        
+        
+        //Testings 
+        long lastObjectShouldBe = 9223355229966065229;
+        long thirdObjectShouldBe = 65602082527067;
+        if (lastObjectShouldBe == sorted[sorted.Length - 1] && sorted[2] == thirdObjectShouldBe)
+        {
+            Console.Write("No problems in the accuracy");
+        }
+        else
+        {
+            Console.Write("Algorithm is not accurate");
+        }
         //printarray(sorted);
     }
-    private static long[] mergeSort(long[] arr, int start, int end)
+    private static Task<long[]> mergeSort(long[] arr, int start, int end)
     {
         
-        long[] a = { };
-        if (start + 3 >= end)
-        { //we have only 4 items to sort
+        long[] a = new long[end - start + 1];
 
-            a = arr.Skip(start).Take(end - start + 1).ToArray();
+        if (start == end)
+        {
+            a[0] = arr[start];
+            return Task.FromResult(a);
+        }
 
-            Array.Sort(a);
-            
-            return a;
+        if (end == start + 1)
+        {
+            a[0] = Math.Min(arr[start], arr[end]);
+            a[1] = Math.Max(arr[start], arr[end]);
+            return Task.FromResult(a);
         }
 
         int middle = start + (end - start) / 2;
+        Task<long[]> left = mergeSort(arr, start, middle - 1);
+        Task<long[]> right = mergeSort(arr, middle, end);
+        Task.WhenAll(left, right);
 
-        long[] left = mergeSort(arr, start, middle - 1);
-        long[] right = mergeSort(arr, middle, end);
-
-
-        return mergeSortedLists(left, right);
+        return Task.FromResult(mergeSortedLists(left.Result, right.Result));
 
     }
 
