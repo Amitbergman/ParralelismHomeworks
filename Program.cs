@@ -101,17 +101,27 @@ public class Example
         {
             if (indexRight == right.Length)
             {
-                mergedArray[indexNew] = left[indexLeft];
-                indexLeft += 1;
-                indexNew += 1;
-                continue;
+                //We finished the right one, reading all from left
+                while(indexLeft < left.Length)
+                {
+                    mergedArray[indexNew] = left[indexLeft];
+                    indexLeft += 1;
+                    indexNew += 1;
+                }
+                return mergedArray;
+                
             }
             if (indexLeft == left.Length)
             {
-                mergedArray[indexNew] = right[indexRight];
-                indexRight += 1;
-                indexNew += 1;
-                continue;
+                //We finished the left one, reading all from right
+                while (indexRight < right.Length)
+                {
+                    mergedArray[indexNew] = right[indexRight];
+                    indexRight += 1;
+                    indexNew += 1;
+                    
+                }
+                return mergedArray;
             }
 
             if (left[indexLeft] <= right[indexRight])
