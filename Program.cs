@@ -76,7 +76,7 @@ public class Example
         Task<long[]> right = mergeSort(arr, middle, end);
         Task.WhenAll(left, right);
 
-        return Task.FromResult(mergeSortedLists(left.Result, right.Result));
+        return Task.FromResult(mergeSortedLists(left.Result, right.Result, 0, left.Result.Length-1, 0, right.Result.Length-1));
 
     }
 
@@ -88,12 +88,12 @@ public class Example
         }
     }
 
-    private static long[] mergeSortedLists(long[] left, long[] right)
+    private static long[] mergeSortedLists(long[] left, long[] right, int startLeft, int endLeft, int startRight, int endRight)
     {
-        int lengthOfNewArray = left.Length + right.Length;
-
+        int lengthOfLeft = endLeft - startLeft + 1;
+        int lengthOfRight = endRight - startRight + 1;
+        int lengthOfNewArray = lengthOfLeft + lengthOfRight;
         long[] mergedArray = new long[lengthOfNewArray];
-
         int indexNew = 0;
         int indexLeft = 0;
         int indexRight = 0;
@@ -102,14 +102,14 @@ public class Example
             if (indexRight == right.Length)
             {
                 //We finished the right one, reading all from left
-                while(indexLeft < left.Length)
+                while (indexLeft < left.Length)
                 {
                     mergedArray[indexNew] = left[indexLeft];
                     indexLeft += 1;
                     indexNew += 1;
                 }
                 return mergedArray;
-                
+
             }
             if (indexLeft == left.Length)
             {
@@ -119,7 +119,7 @@ public class Example
                     mergedArray[indexNew] = right[indexRight];
                     indexRight += 1;
                     indexNew += 1;
-                    
+
                 }
                 return mergedArray;
             }
@@ -144,8 +144,6 @@ public class Example
 
         return mergedArray;
 
-
     }
-
 
 }
