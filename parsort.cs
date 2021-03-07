@@ -8,7 +8,6 @@ public class Example
 {
     public static void Main()
     {
-
         String[] args = Environment.GetCommandLineArgs();
         string fileName = args[2];
         int numberOfCores = int.Parse(args[1]);
@@ -30,25 +29,12 @@ public class Example
         Stopwatch sw = new Stopwatch();
         sw.Start();
 
-        long[] sorted =  mergeSort(array, 0, array.Length - 1, numberOfCores).GetAwaiter().GetResult();
+        long[] sorted = mergeSort(array, 0, array.Length - 1, numberOfCores).GetAwaiter().GetResult();
         sw.Stop();
 
         long microseconds = sw.ElapsedTicks / (Stopwatch.Frequency / (1000L * 1000L));
         Console.WriteLine("Merge sort: {0}", microseconds);
-        
-        
-        //Testings 
-        long lastObjectShouldBe = 9223355229966065229;
-        long thirdObjectShouldBe = 65602082527067;
-        if (lastObjectShouldBe == sorted[sorted.Length - 1] && sorted[2] == thirdObjectShouldBe)
-        {
-            Console.Write("No problems in the accuracy");
-        }
-        else
-        {
-            Console.Write("Algorithm is not accurate");
-        }
-        //printarray(sorted);
+        printArrayToStandardOutput(sorted);
     }
     private static Task<long[]> mergeSort(long[] arr, int start, int end, int numberOfCoresWeCanUse)
     {
@@ -71,13 +57,14 @@ public class Example
         }
 
         int middle = start + (end - start) / 2;
-        Task<long[]> left = Task.FromResult(resultArray);
-        Task<long[]> right = Task.FromResult(resultArray);
+        Task<long[]> left;
+        Task<long[]> right;
         if (numberOfCoresWeCanUse == 1)
         {
             left = mergeSort(arr, start, middle - 1, 1);
             Task.WhenAll(left);
             right = mergeSort(arr, middle, end, 1);
+            Task.WhenAll(right);
         }
 
         else
@@ -100,7 +87,7 @@ public class Example
 
     }
 
-    private static void printarray(long[] a)
+    private static void printArrayToStandardOutput(long[] a)
     {
         for (int i = 0; i < a.Length; i++)
         {
@@ -151,6 +138,14 @@ public class Example
         return Task.FromResult(0);
     }
 
+    /// <summary>
+    /// This method merges the lists up until the intex maxIndex of the merges one and put the result in resultArray
+    /// </summary>
+    /// <param name="list1"></param>
+    /// <param name="list2"></param>
+    /// <param name="maxIndex"></param>
+    /// <param name="resultArray"></param>
+    /// <returns></returns>
     private static Task mergeSortedStartToIndex(long[] list1, long[] list2, int maxIndex, long[] resultArray)
     {
         int indexInList1 = 0;
