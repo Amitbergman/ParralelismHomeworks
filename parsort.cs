@@ -3,14 +3,17 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 
 public class Example
 {
+    static int numberOfThreads = 1;
     public static void Main()
     {
+
         String[] args = Environment.GetCommandLineArgs();
         string fileName = args[2];
-        int numberOfCores = int.Parse(args[1]);
+        int numberOfCoresWeCanUse = int.Parse(args[1]);
 
         string line;
         List<long> listOfNumbersToSort = new List<long>();
@@ -29,15 +32,17 @@ public class Example
         Stopwatch sw = new Stopwatch();
         sw.Start();
 
-        long[] sorted = mergeSort(array, 0, array.Length - 1, numberOfCores).GetAwaiter().GetResult();
+        long[] sorted = mergeSort(array, 0, array.Length - 1, numberOfCoresWeCanUse);
         sw.Stop();
 
         long microseconds = sw.ElapsedTicks / (Stopwatch.Frequency / (1000L * 1000L));
         Console.WriteLine("Merge sort: {0}", microseconds);
-        printArrayToStandardOutput(sorted);
+
+        Console.WriteLine(sorted[1]);
     }
-    private static Task<long[]> mergeSort(long[] arr, int start, int end, int numberOfCoresWeCanUse)
+    private static long[] mergeSort(long[] arr, int start, int end, int numberOfCoresWeCanUse)
     {
+        
         int sizeOfTheArrayToSort = end - start + 1;
         long[] resultArray = new long[sizeOfTheArrayToSort];
 
@@ -45,7 +50,7 @@ public class Example
         {
             //This is trivial - only 1 element to sort
             resultArray[0]=  arr[start];
-            return Task.FromResult(resultArray);
+            return resultArray;
         }
 
         if (end == start + 1)
@@ -53,38 +58,58 @@ public class Example
             //This is trivial - only 2 elements to sort
             resultArray[0] = Math.Min(arr[start], arr[end]);
             resultArray[1] = Math.Max(arr[start], arr[end]);
-            return Task.FromResult(resultArray);
+            return resultArray;
         }
 
         int middle = start + (end - start) / 2;
-        Task<long[]> left;
-        Task<long[]> right;
-        if (numberOfCoresWeCanUse == 1)
+        long[] left = { };
+        long[] right = { };
+        if (numberOfThreads > numberOfCoresWeCanUse)
         {
             left = mergeSort(arr, start, middle - 1, 1);
-            Task.WhenAll(left);
             right = mergeSort(arr, middle, end, 1);
-            Task.WhenAll(right);
         }
 
         else
         {
+            Interlocked.Add(ref numberOfThreads, 2);
+
             //Dividing the cores to ones that will work on the start of the array and ones that will work on the end
             int halfOfNodes = numberOfCoresWeCanUse / 2;
-            left =  mergeSort(arr, start, middle - 1, numberOfCoresWeCanUse - halfOfNodes);
-            right = mergeSort(arr, middle, end, halfOfNodes);
-            Task.WaitAll(left, right);
+            Thread c  =  new Thread (()=> left = mergeSort(arr, start, middle - 1, halfOfNodes));
+            Thread d  =  new Thread (()=> right = mergeSort(arr, middle, end, numberOfCoresWeCanUse - halfOfNodes));
+
+            c.Start();
+            d.Start();
+            c.Join();
+            d.Join();
         }
         
         int middleOfBoth = sizeOfTheArrayToSort / 2;
         //Now I want to parralely merge both sides
         //We will divide the merge to half from start to middle and half from end to middle
 
-        Task leftSide = mergeSortedStartToIndex(left.Result, right.Result, middleOfBoth, resultArray);
-        Task rightSide = mergeSortedEndToIndex(left.Result, right.Result, middleOfBoth, resultArray);
-        Task.WaitAll(leftSide, rightSide);
-        return Task.FromResult(resultArray);
+        
+        if (numberOfThreads > numberOfCoresWeCanUse)
+        {
+            mergeSortedStartToIndex(left, right, middleOfBoth, resultArray);
+            mergeSortedEndToIndex(left, right, middleOfBoth, resultArray);
+        }
+        else
+        {
+            Interlocked.Add(ref numberOfThreads, 2);
 
+            Thread a = new Thread(() => mergeSortedStartToIndex(left, right, middleOfBoth, resultArray));
+            Thread b = new Thread(() => mergeSortedEndToIndex(left, right, middleOfBoth, resultArray));
+            a.Start();
+            b.Start();
+
+            a.Join();
+            b.Join();
+
+        }
+
+        return resultArray;
     }
 
     private static void printArrayToStandardOutput(long[] a)
@@ -148,6 +173,7 @@ public class Example
     /// <returns></returns>
     private static Task mergeSortedStartToIndex(long[] list1, long[] list2, int maxIndex, long[] resultArray)
     {
+
         int indexInList1 = 0;
         int indexInList2 = 0;
         int indexInResult = 0;

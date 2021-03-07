@@ -2,7 +2,7 @@
   "profiles": {
     "ConsoleApp3": {
       "commandName": "Project",
-      "commandLineArgs": "20 input2.txt"
+      "commandLineArgs": "50 input.txt"
     }
   }
 }
