@@ -30,7 +30,6 @@ public class Example
         Stopwatch sw = new Stopwatch();
         sw.Start();
 
-
         long[] sorted =  mergeSort(array, 0, array.Length - 1, numberOfCores).GetAwaiter().GetResult();
         sw.Stop();
 
@@ -53,25 +52,23 @@ public class Example
     }
     private static Task<long[]> mergeSort(long[] arr, int start, int end, int numberOfCoresWeCanUse)
     {
-        
-        long[] a = new long[end - start + 1];
-
         if (start == end)
         {
-            a[0] = arr[start];
+            long[] a = { arr[start] };
             return Task.FromResult(a);
         }
 
         if (end == start + 1)
         {
+            long[] a = new long[2];
             a[0] = Math.Min(arr[start], arr[end]);
             a[1] = Math.Max(arr[start], arr[end]);
             return Task.FromResult(a);
         }
 
         int middle = start + (end - start) / 2;
-        Task<long[]> right;
         Task<long[]> left;
+        Task<long[]> right;
         if (numberOfCoresWeCanUse == 1)
         {
             left = mergeSort(arr, start, middle - 1, 1);
@@ -81,6 +78,7 @@ public class Example
 
         else
         {
+            //Dividing the cores to ones that will work on the start of the array and ones that will work on the end
             int halfOfNodes = numberOfCoresWeCanUse / 2;
             left = mergeSort(arr, start, middle - 1, numberOfCoresWeCanUse - halfOfNodes);
             right = mergeSort(arr, middle, end, halfOfNodes);
@@ -89,7 +87,7 @@ public class Example
 
         Task.WhenAll(left, right);
 
-        return Task.FromResult(mergeSortedLists(left.Result, right.Result, 0, left.Result.Length-1, 0, right.Result.Length-1));
+        return Task.FromResult(mergeSortedLists(left.Result, right.Result));
 
     }
 
@@ -101,11 +99,9 @@ public class Example
         }
     }
 
-    private static long[] mergeSortedLists(long[] left, long[] right, int startLeft, int endLeft, int startRight, int endRight)
+    private static long[] mergeSortedLists(long[] left, long[] right)
     {
-        int lengthOfLeft = endLeft - startLeft + 1;
-        int lengthOfRight = endRight - startRight + 1;
-        int lengthOfNewArray = lengthOfLeft + lengthOfRight;
+        int lengthOfNewArray = left.Length + right.Length;
         long[] mergedArray = new long[lengthOfNewArray];
         int indexNew = 0;
         int indexLeft = 0;
