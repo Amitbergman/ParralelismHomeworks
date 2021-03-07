@@ -33,7 +33,7 @@ public class Example
         sw.Start();
 
 
-        long[] sorted =  mergeSort(array, 0, array.Length - 1).GetAwaiter().GetResult();
+        long[] sorted =  mergeSort(array, 0, array.Length - 1, numberOfCores).GetAwaiter().GetResult();
         sw.Stop();
 
         long microseconds = sw.ElapsedTicks / (Stopwatch.Frequency / (1000L * 1000L));
@@ -53,7 +53,7 @@ public class Example
         }
         //printarray(sorted);
     }
-    private static Task<long[]> mergeSort(long[] arr, int start, int end)
+    private static Task<long[]> mergeSort(long[] arr, int start, int end, int numberOfCoresWeCanUse)
     {
         
         long[] a = new long[end - start + 1];
@@ -72,8 +72,23 @@ public class Example
         }
 
         int middle = start + (end - start) / 2;
-        Task<long[]> left = mergeSort(arr, start, middle - 1);
-        Task<long[]> right = mergeSort(arr, middle, end);
+        Task<long[]> right;
+        Task<long[]> left;
+        if (numberOfCoresWeCanUse == 1)
+        {
+            left = mergeSort(arr, start, middle - 1, 1);
+            Task.WhenAll(left);
+            right = mergeSort(arr, middle, end, 1);
+        }
+
+        else
+        {
+            int halfOfNodes = numberOfCoresWeCanUse / 2;
+            left = mergeSort(arr, start, middle - 1, numberOfCoresWeCanUse - halfOfNodes);
+            right = mergeSort(arr, middle, end, halfOfNodes);
+
+        }
+
         Task.WhenAll(left, right);
 
         return Task.FromResult(mergeSortedLists(left.Result, right.Result, 0, left.Result.Length-1, 0, right.Result.Length-1));
