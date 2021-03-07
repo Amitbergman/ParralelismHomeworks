@@ -71,8 +71,8 @@ public class Example
         }
 
         int middle = start + (end - start) / 2;
-        Task<long[]> left;
-        Task<long[]> right;
+        Task<long[]> left = Task.FromResult(resultArray);
+        Task<long[]> right = Task.FromResult(resultArray);
         if (numberOfCoresWeCanUse == 1)
         {
             left = mergeSort(arr, start, middle - 1, 1);
@@ -84,21 +84,19 @@ public class Example
         {
             //Dividing the cores to ones that will work on the start of the array and ones that will work on the end
             int halfOfNodes = numberOfCoresWeCanUse / 2;
-            left = mergeSort(arr, start, middle - 1, numberOfCoresWeCanUse - halfOfNodes);
-            right = mergeSort(arr, middle, end, halfOfNodes);
-
+            Parallel.Invoke(
+                () => left = mergeSort(arr, start, middle - 1, numberOfCoresWeCanUse - halfOfNodes),
+                () => right = mergeSort(arr, middle, end, halfOfNodes)
+                );
         }
-
-        Task.WhenAll(left, right);
 
         int middleOfBoth = sizeOfTheArrayToSort / 2;
         //Now I want to parralely merge both sides
         //We will divide the merge to half from start to middle and half from end to middle
-
-        Task leftMerge = mergeSortedStartToIndex(left.Result, right.Result, middleOfBoth, resultArray);
-        Task rightMerge = mergeSortedEndToIndex(left.Result, right.Result, middleOfBoth, resultArray);
-
-        Task.WhenAll(leftMerge, rightMerge);
+        Parallel.Invoke(
+            () => mergeSortedStartToIndex(left.Result, right.Result, middleOfBoth, resultArray),
+            () => mergeSortedEndToIndex(left.Result, right.Result, middleOfBoth, resultArray)
+            );
         return Task.FromResult(resultArray);
 
     }
