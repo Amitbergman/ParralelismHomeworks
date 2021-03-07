@@ -92,10 +92,10 @@ public class Example
         int middleOfBoth = sizeOfTheArrayToSort / 2;
         //Now I want to parralely merge both sides
         //We will divide the merge to half from start to middle and half from end to middle
-        Parallel.Invoke(
-            () => mergeSortedStartToIndex(left.Result, right.Result, middleOfBoth, resultArray),
-            () => mergeSortedEndToIndex(left.Result, right.Result, middleOfBoth, resultArray)
-            );
+
+        Task leftSide = mergeSortedStartToIndex(left.Result, right.Result, middleOfBoth, resultArray);
+        Task rightSide = mergeSortedEndToIndex(left.Result, right.Result, middleOfBoth, resultArray);
+        Task.WaitAll(leftSide, rightSide);
         return Task.FromResult(resultArray);
 
     }
