@@ -52,18 +52,22 @@ public class Example
     }
     private static Task<long[]> mergeSort(long[] arr, int start, int end, int numberOfCoresWeCanUse)
     {
+        int sizeOfTheArrayToSort = end - start + 1;
+        long[] resultArray = new long[sizeOfTheArrayToSort];
+
         if (start == end)
         {
-            long[] a = { arr[start] };
-            return Task.FromResult(a);
+            //This is trivial - only 1 element to sort
+            resultArray[0]=  arr[start];
+            return Task.FromResult(resultArray);
         }
 
         if (end == start + 1)
         {
-            long[] a = new long[2];
-            a[0] = Math.Min(arr[start], arr[end]);
-            a[1] = Math.Max(arr[start], arr[end]);
-            return Task.FromResult(a);
+            //This is trivial - only 2 elements to sort
+            resultArray[0] = Math.Min(arr[start], arr[end]);
+            resultArray[1] = Math.Max(arr[start], arr[end]);
+            return Task.FromResult(resultArray);
         }
 
         int middle = start + (end - start) / 2;
@@ -87,7 +91,15 @@ public class Example
 
         Task.WhenAll(left, right);
 
-        return Task.FromResult(mergeSortedLists(left.Result, right.Result));
+        int middleOfBoth = sizeOfTheArrayToSort / 2;
+        //Now I want to parralely merge both sides
+        //We will divide the merge to half from start to middle and half from end to middle
+
+        Task leftMerge = mergeSortedStartToIndex(left.Result, right.Result, middleOfBoth, resultArray);
+        Task rightMerge = mergeSortedEndToIndex(left.Result, right.Result, middleOfBoth, resultArray);
+
+        Task.WhenAll(leftMerge, rightMerge);
+        return Task.FromResult(resultArray);
 
     }
 
@@ -99,60 +111,89 @@ public class Example
         }
     }
 
-    private static long[] mergeSortedLists(long[] left, long[] right)
+    private static Task mergeSortedEndToIndex(long[] list1, long[] list2, int maxIndex, long[] resultArray)
     {
-        int lengthOfNewArray = left.Length + right.Length;
-        long[] mergedArray = new long[lengthOfNewArray];
-        int indexNew = 0;
-        int indexLeft = 0;
-        int indexRight = 0;
-        while (indexNew < lengthOfNewArray)
+        //This method will write to max index
+
+        int indexInList1 = list1.Length - 1;
+        int indexInList2 = list2.Length - 1;
+        int indexInResult = resultArray.Length - 1;
+        while (indexInResult >= maxIndex)
         {
-            if (indexRight == right.Length)
+            if (indexInList1 == -1)
             {
-                //We finished the right one, reading all from left
-                while (indexLeft < left.Length)
-                {
-                    mergedArray[indexNew] = left[indexLeft];
-                    indexLeft += 1;
-                    indexNew += 1;
-                }
-                return mergedArray;
-
-            }
-            if (indexLeft == left.Length)
-            {
-                //We finished the left one, reading all from right
-                while (indexRight < right.Length)
-                {
-                    mergedArray[indexNew] = right[indexRight];
-                    indexRight += 1;
-                    indexNew += 1;
-
-                }
-                return mergedArray;
-            }
-
-            if (left[indexLeft] <= right[indexRight])
-            {
-                //Left is smaller
-                mergedArray[indexNew] = left[indexLeft];
-                indexLeft += 1;
-                indexNew += 1;
+                //We need to put the value from list 2
+                resultArray[indexInResult] = list2[indexInList2];
+                indexInList2--;
+                indexInResult--;
                 continue;
+            }
+            if (indexInList2 == -1)
+            {
+                //We need to put the value from list 2
+                resultArray[indexInResult] = list1[indexInList1];
+                indexInList1--;
+                indexInResult--;
+                continue;
+            }
+            if (list1[indexInList1] > list2[indexInList2])
+            {
+                //We need to put the value from list 1
+                resultArray[indexInResult] = list1[indexInList1];
+                indexInList1--;
+                indexInResult--;
             }
             else
             {
-                //Right is smaller
-                mergedArray[indexNew] = right[indexRight];
-                indexRight += 1;
-                indexNew += 1;
-                continue;
+                //We need to put the value from list 2
+                resultArray[indexInResult] = list2[indexInList2];
+                indexInList2--;
+                indexInResult--;
             }
         }
+        return Task.CompletedTask;
+    }
 
-        return mergedArray;
-
+    private static Task mergeSortedStartToIndex(long[] list1, long[] list2, int maxIndex, long[] resultArray)
+    {
+        int indexInList1 = 0;
+        int indexInList2 = 0;
+        int indexInResult = 0;
+        while (indexInResult < maxIndex)
+        {
+            if (indexInList1 == list1.Length)
+            {
+                //We need to put the value from list 2
+                resultArray[indexInResult] = list2[indexInList2];
+                indexInList2++;
+                indexInResult++;
+                continue;
+            }
+            if (indexInList2 == list2.Length)
+            {
+                //We need to put the value from list 2
+                resultArray[indexInResult] = list1[indexInList1];
+                indexInList1++;
+                indexInResult++;
+                continue;
+            }
+            //This method will not write to max index
+            if (list1[indexInList1] < list2[indexInList2])
+            {
+                //We need to put the value from list 1
+                resultArray[indexInResult] = list1[indexInList1];
+                indexInList1++;
+                indexInResult++;
+            }
+            else
+            {
+                //We need to put the value from list 2
+                resultArray[indexInResult] = list2[indexInList2];
+                indexInList2++;
+                indexInResult++;
+            }
+        }
+        return Task.CompletedTask;
     }
 
 }
