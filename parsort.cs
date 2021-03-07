@@ -84,11 +84,10 @@ public class Example
         {
             //Dividing the cores to ones that will work on the start of the array and ones that will work on the end
             int halfOfNodes = numberOfCoresWeCanUse / 2;
-            Parallel.Invoke(
-                () => left = mergeSort(arr, start, middle - 1, numberOfCoresWeCanUse - halfOfNodes),
-                () => right = mergeSort(arr, middle, end, halfOfNodes)
-                );
+            left = mergeSort(arr, start, middle - 1, numberOfCoresWeCanUse - halfOfNodes);
+            right = mergeSort(arr, middle, end, halfOfNodes);
         }
+        Task.WhenAll(left, right);
 
         int middleOfBoth = sizeOfTheArrayToSort / 2;
         //Now I want to parralely merge both sides
