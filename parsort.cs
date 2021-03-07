@@ -151,7 +151,7 @@ public class Example
                 indexInResult--;
             }
         }
-        return Task.CompletedTask;
+        return Task.FromResult(0);
     }
 
     private static Task mergeSortedStartToIndex(long[] list1, long[] list2, int maxIndex, long[] resultArray)
@@ -193,7 +193,7 @@ public class Example
                 indexInResult++;
             }
         }
-        return Task.CompletedTask;
+        return Task.FromResult(0);
     }
 
 }
