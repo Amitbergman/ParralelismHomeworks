@@ -84,11 +84,13 @@ public class Example
         {
             //Dividing the cores to ones that will work on the start of the array and ones that will work on the end
             int halfOfNodes = numberOfCoresWeCanUse / 2;
-            left = mergeSort(arr, start, middle - 1, numberOfCoresWeCanUse - halfOfNodes);
-            right = mergeSort(arr, middle, end, halfOfNodes);
+            left = new Task<long[]>(()=> mergeSort(arr, start, middle - 1, numberOfCoresWeCanUse - halfOfNodes).Result);
+            right = new Task<long[]>(()=> mergeSort(arr, middle, end, halfOfNodes).Result);
+            left.Start();
+            right.Start();
+            Task.WaitAll(left, right);
         }
-        Task.WhenAll(left, right);
-
+        
         int middleOfBoth = sizeOfTheArrayToSort / 2;
         //Now I want to parralely merge both sides
         //We will divide the merge to half from start to middle and half from end to middle
