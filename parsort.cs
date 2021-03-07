@@ -84,10 +84,8 @@ public class Example
         {
             //Dividing the cores to ones that will work on the start of the array and ones that will work on the end
             int halfOfNodes = numberOfCoresWeCanUse / 2;
-            left = new Task<long[]>(()=> mergeSort(arr, start, middle - 1, numberOfCoresWeCanUse - halfOfNodes).Result);
-            right = new Task<long[]>(()=> mergeSort(arr, middle, end, halfOfNodes).Result);
-            left.Start();
-            right.Start();
+            left =  mergeSort(arr, start, middle - 1, numberOfCoresWeCanUse - halfOfNodes);
+            right = mergeSort(arr, middle, end, halfOfNodes);
             Task.WaitAll(left, right);
         }
         
