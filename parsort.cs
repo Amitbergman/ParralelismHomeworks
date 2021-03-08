@@ -38,7 +38,7 @@ public class Example
         long microseconds = sw.ElapsedTicks / (Stopwatch.Frequency / (1000L * 1000L));
         Console.WriteLine("Merge sort: {0}", microseconds);
 
-        Console.WriteLine(sorted[1]);
+        printArrayToStandardOutput(sorted);
     }
     private static long[] mergeSort(long[] arr, int start, int end, int numberOfCoresWeCanUse)
     {
