@@ -7,7 +7,7 @@ using System.Threading;
 
 public class Example
 {
-    static int numberOfThreads = 1;
+    static int numberOfThreadsInUse = 1;
     public static void Main()
     {
 
@@ -64,15 +64,20 @@ public class Example
         int middle = start + (end - start) / 2;
         long[] left = { };
         long[] right = { };
-        if (numberOfThreads > numberOfCoresWeCanUse)
+        
+        //Declare that you need 2 more threads
+        Interlocked.Add(ref numberOfThreadsInUse, 2);
+
+        if (numberOfThreadsInUse > numberOfCoresWeCanUse)
         {
+            //You cannot use these 2 threads, just run synchronousesly
+            Interlocked.Add(ref numberOfThreadsInUse, -2);
             left = mergeSort(arr, start, middle - 1, 1);
             right = mergeSort(arr, middle, end, 1);
         }
 
         else
         {
-            Interlocked.Add(ref numberOfThreads, 2);
 
             //Dividing the cores to ones that will work on the start of the array and ones that will work on the end
             int halfOfNodes = numberOfCoresWeCanUse / 2;
@@ -83,22 +88,28 @@ public class Example
             d.Start();
             c.Join();
             d.Join();
+            //They finihsed, so these threads are available now
+            Interlocked.Add(ref numberOfThreadsInUse, -2);
+
         }
-        
+
         int middleOfBoth = sizeOfTheArrayToSort / 2;
         //Now I want to parralely merge both sides
         //We will divide the merge to half from start to middle and half from end to middle
 
-        
-        if (numberOfThreads > numberOfCoresWeCanUse)
+        //Declare that this thread wants to create 2 more
+        Interlocked.Add(ref numberOfThreadsInUse, 2);
+
+        if (numberOfThreadsInUse > numberOfCoresWeCanUse)
         {
+            //You cannot use these 2 threads, just run synchronousesly
+            Interlocked.Add(ref numberOfThreadsInUse, -2);
             mergeSortedStartToIndex(left, right, middleOfBoth, resultArray);
             mergeSortedEndToIndex(left, right, middleOfBoth, resultArray);
         }
         else
         {
-            Interlocked.Add(ref numberOfThreads, 2);
-
+            //You have threads to create this two
             Thread a = new Thread(() => mergeSortedStartToIndex(left, right, middleOfBoth, resultArray));
             Thread b = new Thread(() => mergeSortedEndToIndex(left, right, middleOfBoth, resultArray));
             a.Start();
@@ -106,6 +117,8 @@ public class Example
 
             a.Join();
             b.Join();
+            //They finihsed, so these threads are available now
+            Interlocked.Add(ref numberOfThreadsInUse, -2);
 
         }
 
@@ -164,7 +177,7 @@ public class Example
     }
 
     /// <summary>
-    /// This method merges the lists up until the intex maxIndex of the merges one and put the result in resultArray
+    /// This method merges the lists up until the index maxIndex of the merged one and put the result in resultArray
     /// </summary>
     /// <param name="list1"></param>
     /// <param name="list2"></param>
@@ -179,6 +192,7 @@ public class Example
         int indexInResult = 0;
         while (indexInResult < maxIndex)
         {
+            //This method will not write to max index
             if (indexInList1 == list1.Length)
             {
                 //We need to put the value from list 2
@@ -195,7 +209,6 @@ public class Example
                 indexInResult++;
                 continue;
             }
-            //This method will not write to max index
             if (list1[indexInList1] < list2[indexInList2])
             {
                 //We need to put the value from list 1
